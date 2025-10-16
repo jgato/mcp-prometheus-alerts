@@ -22,59 +22,171 @@ import os
 import json
 import httpx
 from mcp.server.fastmcp import FastMCP
+from typing import Dict, Optional
 
 # Initialize FastMCP server
 mcp = FastMCP("Prometheus MCP Server")
 
-# Configuration
-PROMETHEUS_URL = os.getenv("PROMETHEUS_URL", "")
-PROMETHEUS_TOKEN = os.getenv("PROMETHEUS_TOKEN", "")
-PROMETHEUS_VERIFY_SSL = os.getenv("PROMETHEUS_VERIFY_SSL", "true").lower() in ("true", "1", "yes")
+# Load server configurations
+SERVERS: Dict[str, dict] = {}
+
+def load_servers():
+    """Load Prometheus server configurations from environment variables"""
+    global SERVERS
+    
+    # Try to load multiple servers from JSON configuration
+    servers_json = os.getenv("PROMETHEUS_SERVERS", "")
+    if servers_json:
+        try:
+            servers_list = json.loads(servers_json)
+            for server in servers_list:
+                name = server.get("name")
+                if name:
+                    SERVERS[name] = {
+                        "name": name,
+                        "description": server.get("description", ""),
+                        "url": server.get("url", ""),
+                        "token": server.get("token", ""),
+                        "verify_ssl": server.get("verify_ssl", True)
+                    }
+        except json.JSONDecodeError as e:
+            print(f"Warning: Failed to parse PROMETHEUS_SERVERS JSON: {e}")
+    
+    # Backward compatibility: Load single server configuration if PROMETHEUS_SERVERS not set
+    if not SERVERS:
+        prometheus_url = os.getenv("PROMETHEUS_URL", "")
+        if prometheus_url:
+            SERVERS["default"] = {
+                "name": "default",
+                "description": "Default Prometheus server",
+                "url": prometheus_url,
+                "token": os.getenv("PROMETHEUS_TOKEN", ""),
+                "verify_ssl": os.getenv("PROMETHEUS_VERIFY_SSL", "true").lower() in ("true", "1", "yes")
+            }
+
+# Load servers on startup
+load_servers()
 
 
-def get_headers():
+def get_server(server_name: Optional[str] = None) -> Optional[dict]:
+    """Get server configuration by name"""
+    if not SERVERS:
+        return None
+    
+    # If no server name specified, use the first available server
+    if not server_name:
+        return next(iter(SERVERS.values()))
+    
+    return SERVERS.get(server_name)
+
+
+def get_headers(token: str = "") -> dict:
     """Get headers for Prometheus API requests"""
     headers = {}
-    if PROMETHEUS_TOKEN:
-        headers["Authorization"] = f"Bearer {PROMETHEUS_TOKEN}"
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
     return headers
 
 
 @mcp.tool()
-async def check_prometheus_connection() -> str:
+async def list_servers() -> str:
     """
-    Check the connection to Prometheus server.
+    List all configured Prometheus servers.
+    
+    Returns:
+        str: JSON string with list of available servers and their configurations.
+    """
+    if not SERVERS:
+        return json.dumps({
+            "status": "error",
+            "message": "No Prometheus servers configured"
+        })
+    
+    servers_info = []
+    for name, config in SERVERS.items():
+        servers_info.append({
+            "name": config["name"],
+            "description": config["description"],
+            "url": config["url"],
+            "has_token": bool(config["token"]),
+            "verify_ssl": config["verify_ssl"]
+        })
+    
+    return json.dumps({
+        "status": "success",
+        "total_servers": len(servers_info),
+        "servers": servers_info
+    }, indent=2)
+
+
+@mcp.tool()
+async def check_prometheus_connection(server_name: str = "") -> str:
+    """
+    Check the connection to a Prometheus server.
+    
+    Args:
+        server_name: Name of the server to check. If empty, uses the first configured server.
     
     Returns:
         str: JSON string with connection status and server information.
     """
-    if not PROMETHEUS_URL:
-        return '{"status": "error", "message": "PROMETHEUS_URL not configured"}'
+    server = get_server(server_name if server_name else None)
+    if not server:
+        available = ", ".join(SERVERS.keys()) if SERVERS else "none"
+        return json.dumps({
+            "status": "error",
+            "message": f"Server '{server_name}' not found" if server_name else "No servers configured",
+            "available_servers": available
+        })
     
     try:
-        async with httpx.AsyncClient(timeout=10.0, verify=PROMETHEUS_VERIFY_SSL) as client:
+        async with httpx.AsyncClient(timeout=10.0, verify=server["verify_ssl"]) as client:
             # Try to get build info to verify connection
             response = await client.get(
-                f"{PROMETHEUS_URL}/api/v1/status/buildinfo",
-                headers=get_headers()
+                f"{server['url']}/api/v1/status/buildinfo",
+                headers=get_headers(server["token"])
             )
             
             if response.status_code == 200:
                 data = response.json()
-                return f'{{"status": "success", "message": "Connected to Prometheus", "build_info": {data}}}'
+                return json.dumps({
+                    "status": "success",
+                    "message": "Connected to Prometheus",
+                    "server": server["name"],
+                    "server_description": server["description"],
+                    "build_info": data
+                }, indent=2)
             else:
-                return f'{{"status": "error", "message": "Failed to connect", "status_code": {response.status_code}, "details": "{response.text}"}}'
+                return json.dumps({
+                    "status": "error",
+                    "message": "Failed to connect",
+                    "server": server["name"],
+                    "status_code": response.status_code,
+                    "details": response.text
+                })
                 
     except httpx.TimeoutException:
-        return '{"status": "error", "message": "Connection timeout"}'
+        return json.dumps({
+            "status": "error",
+            "message": "Connection timeout",
+            "server": server["name"]
+        })
     except httpx.ConnectError as e:
-        return f'{{"status": "error", "message": "Connection error: {str(e)}"}}'
+        return json.dumps({
+            "status": "error",
+            "message": f"Connection error: {str(e)}",
+            "server": server["name"]
+        })
     except Exception as e:
-        return f'{{"status": "error", "message": "Unexpected error: {str(e)}"}}'
+        return json.dumps({
+            "status": "error",
+            "message": f"Unexpected error: {str(e)}",
+            "server": server["name"]
+        })
 
 
 @mcp.tool()
-async def list_alerts(state: str = "") -> str:
+async def list_alerts(server_name: str = "", state: str = "") -> str:
     """
     List all alert rules and alerts from Prometheus.
     
@@ -82,6 +194,7 @@ async def list_alerts(state: str = "") -> str:
     You can optionally filter by state to see only firing, pending, or inactive alerts.
     
     Args:
+        server_name: Name of the server to query. If empty, uses the first configured server.
         state: Optional filter by alert state. Can be 'firing', 'pending', or 'inactive'.
                Leave empty to get all alert rules regardless of state.
     
@@ -92,14 +205,20 @@ async def list_alerts(state: str = "") -> str:
              - Rule queries, labels, annotations
              - Current state and active alerts for each rule
     """
-    if not PROMETHEUS_URL:
-        return '{"status": "error", "message": "PROMETHEUS_URL not configured"}'
+    server = get_server(server_name if server_name else None)
+    if not server:
+        available = ", ".join(SERVERS.keys()) if SERVERS else "none"
+        return json.dumps({
+            "status": "error",
+            "message": f"Server '{server_name}' not found" if server_name else "No servers configured",
+            "available_servers": available
+        })
     
     try:
-        async with httpx.AsyncClient(timeout=10.0, verify=PROMETHEUS_VERIFY_SSL) as client:
+        async with httpx.AsyncClient(timeout=10.0, verify=server["verify_ssl"]) as client:
             response = await client.get(
-                f"{PROMETHEUS_URL}/api/v1/rules",
-                headers=get_headers()
+                f"{server['url']}/api/v1/rules",
+                headers=get_headers(server["token"])
             )
             
             if response.status_code == 200:
@@ -109,6 +228,7 @@ async def list_alerts(state: str = "") -> str:
                     return json.dumps({
                         "status": "error",
                         "message": "Failed to retrieve alert rules",
+                        "server": server["name"],
                         "details": data
                     })
                 
@@ -159,6 +279,8 @@ async def list_alerts(state: str = "") -> str:
                 
                 result = {
                     "status": "success",
+                    "server": server["name"],
+                    "server_description": server["description"],
                     "filter": state if state else "all",
                     "summary": {
                         "total_alert_rules": total_rules,
@@ -175,16 +297,29 @@ async def list_alerts(state: str = "") -> str:
                 return json.dumps({
                     "status": "error",
                     "message": "Failed to fetch alert rules",
+                    "server": server["name"],
                     "status_code": response.status_code,
                     "details": response.text
                 })
                 
     except httpx.TimeoutException:
-        return '{"status": "error", "message": "Connection timeout"}'
+        return json.dumps({
+            "status": "error",
+            "message": "Connection timeout",
+            "server": server["name"]
+        })
     except httpx.ConnectError as e:
-        return json.dumps({"status": "error", "message": f"Connection error: {str(e)}"})
+        return json.dumps({
+            "status": "error",
+            "message": f"Connection error: {str(e)}",
+            "server": server["name"]
+        })
     except Exception as e:
-        return json.dumps({"status": "error", "message": f"Unexpected error: {str(e)}"})
+        return json.dumps({
+            "status": "error",
+            "message": f"Unexpected error: {str(e)}",
+            "server": server["name"]
+        })
 
 
 if __name__ == "__main__":
