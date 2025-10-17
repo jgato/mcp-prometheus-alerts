@@ -186,17 +186,18 @@ async def check_prometheus_connection(server_name: str = "") -> str:
 
 
 @mcp.tool()
-async def list_alerts(server_name: str = "", state: str = "") -> str:
+async def get_alerts(server_name: str = "", state: str = "", group_name: str = "") -> str:
     """
-    List all alert rules and alerts from Prometheus.
+    Get all alert rules and alerts from Prometheus.
     
     This function returns all alert rules defined in the system, regardless of their current state.
-    You can optionally filter by state to see only firing, pending, or inactive alerts.
+    You can optionally filter by state and/or group name.
     
     Args:
         server_name: Name of the server to query. If empty, uses the first configured server.
         state: Optional filter by alert state. Can be 'firing', 'pending', or 'inactive'.
                Leave empty to get all alert rules regardless of state.
+        group_name: Optional filter by alert rule group name. Leave empty to get all groups.
     
     Returns:
         str: JSON string with all alert rules including:
@@ -233,6 +234,10 @@ async def list_alerts(server_name: str = "", state: str = "") -> str:
                     })
                 
                 groups = data.get("data", {}).get("groups", [])
+                
+                # Filter by group name if specified
+                if group_name:
+                    groups = [g for g in groups if g.get("name") == group_name]
                 
                 # Filter by state if specified
                 if state:
@@ -281,7 +286,10 @@ async def list_alerts(server_name: str = "", state: str = "") -> str:
                     "status": "success",
                     "server": server["name"],
                     "server_description": server["description"],
-                    "filter": state if state else "all",
+                    "filter": {
+                        "state": state if state else "all",
+                        "group_name": group_name if group_name else "all"
+                    },
                     "summary": {
                         "total_alert_rules": total_rules,
                         "firing": firing_count,
