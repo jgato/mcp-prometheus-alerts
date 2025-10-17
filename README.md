@@ -209,6 +209,16 @@ You can also combine different filters for more advanced results:
 
 ![Using different filters with multiple servers](pics/multiserver_filters.png)
 
+## Advanced queries and context windows
+
+The MCP interacts with Prometheus Alerts API retrieving a whole json with all the queries. That could be long enough to exceed your context windows, specially when comparing multiple servers (even if we dont take the extra_metadata):
+
+![Context window exceeded](pics/complex_prompts_context_2.png)
+
+Instead of that, you can instruct the agent to do the inform on different steps:
+
+![Context window not exceeded](pics/complex_prompts_context_1.png)
+
 ## License
 
 Apache License 2.0
