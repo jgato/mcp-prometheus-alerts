@@ -31,7 +31,7 @@ cp .env.example .env
 
 The server supports two configuration modes:
 
-### Single Server Configuration (Backward Compatible)
+### Single Prometheus Server Configuration (Backward Compatible)
 
 For a single Prometheus server, use these environment variables:
 
@@ -39,7 +39,7 @@ For a single Prometheus server, use these environment variables:
 - `PROMETHEUS_TOKEN`: Bearer token for authentication (optional, if your Prometheus requires auth)
 - `PROMETHEUS_VERIFY_SSL`: Set to `false` to disable SSL certificate verification for self-signed certificates (default: `true`)
 
-### Multiple Server Configuration
+### Multiple Prometheus Server Configuration
 
 For multiple Prometheus servers, use the `PROMETHEUS_SERVERS` environment variable with a JSON array:
 
@@ -157,37 +157,44 @@ check_prometheus_connection()
 check_prometheus_connection(server_name="production")
 ```
 
-### list_alerts
+### get_alerts
 
-List all alert rules from Prometheus with optional filtering by state.
+Get alert rules from Prometheus with optional filtering by state, group, and alert name.
 
-This function returns all alert rules defined in the system, regardless of their current state. You can optionally filter to see only specific states.
+This function returns all alert rules defined in the system. You can filter by state, group name, alert name, and control the level of detail returned.
 
 **Parameters:**
 - `server_name` (optional): Name of the server to query. If empty, uses the first configured server.
 - `state` (optional): Filter by alert state. Can be 'firing', 'pending', or 'inactive'. Leave empty to get all alert rules.
+- `group_name` (optional): Filter by alert rule group name. Leave empty to get all groups.
+- `alert_name` (optional): Filter by specific alert name. Leave empty to get all alerts.
+- `extended_metadata` (optional): If `False` (default), returns only essential fields (name, state, severity, annotations) for each alert, reducing response size significantly. If `True`, returns full metadata including queries, evaluation times, health status, and all labels. Use `False` for efficient context window management when querying many alerts, and `True` only when you need complete technical details for specific alerts.
 
-**Returns:** JSON string with all alert rules including:
+**Returns:** JSON string with alert rules including:
 - Server name and description
 - Summary statistics (total rules, firing, pending, inactive counts)
-- Applied filter
-- Alert rule groups with complete definitions
-- Rule queries, labels, annotations
-- Current state and active alerts for each rule
+- Applied filters
+- Alert rule groups with definitions (full or simplified based on `extended_metadata`)
 
 **Example usage:**
 ```python
-# List all alerts from default server
-list_alerts()
+# Get all alerts from default server (simplified)
+get_alerts()
 
-# List all alerts from specific server
-list_alerts(server_name="production")
+# Get all alerts from specific server with full metadata
+get_alerts(server_name="production", extended_metadata=True)
 
-# List only firing alerts from specific server
-list_alerts(server_name="production", state="firing")
+# Get only firing alerts from specific server
+get_alerts(server_name="production", state="firing")
 
-# List only firing alerts from default server
-list_alerts(state="firing")
+# Get alerts from a specific group
+get_alerts(group_name="kubernetes-storage")
+
+# Get a specific alert with full details
+get_alerts(alert_name="KubePersistentVolumeFillingUp", extended_metadata=True)
+
+# Combine filters
+get_alerts(server_name="production", group_name="etcd", state="firing")
 ```
 
 ### Example: Comparing Alerts Across Multiple Servers
