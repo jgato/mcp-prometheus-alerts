@@ -198,30 +198,9 @@ You can easily compare if specific alerts exist across different Prometheus serv
 
 This example shows checking whether the same Kubernetes persistent volume alerts exist on different servers (vsno5 and vsno7), helping you identify configuration differences between environments.
 
-## Development
+You can also combine different filters for more advanced results:
 
-### Project Structure
-
-```
-prometheus-alerts-mcp/
-├── prometheus_mcp.py            # Main MCP server implementation
-├── requirements.txt             # Python dependencies
-├── servers-config-example.json  # Example multi-server JSON configuration
-├── LICENSE                      # Apache 2.0 License
-└── README.md                    # This file
-```
-
-### Adding New Features
-
-New tools can be added by decorating functions with `@mcp.tool()`:
-
-```python
-@mcp.tool()
-async def your_new_tool(param: str) -> str:
-    """Tool description"""
-    # Implementation
-    return result
-```
+![Using different filters with multiple servers](pics/multiserver_filters.png)
 
 ## License
 
@@ -245,3 +224,5 @@ limitations under the License.
 
 **Jose Gato Luis**  
 Email: jgato@redhat.com
+
+and Cursor with claude-4.5-sonnet

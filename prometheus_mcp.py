@@ -186,18 +186,19 @@ async def check_prometheus_connection(server_name: str = "") -> str:
 
 
 @mcp.tool()
-async def get_alerts(server_name: str = "", state: str = "", group_name: str = "") -> str:
+async def get_alerts(server_name: str = "", state: str = "", group_name: str = "", alert_name: str = "") -> str:
     """
     Get all alert rules and alerts from Prometheus.
     
     This function returns all alert rules defined in the system, regardless of their current state.
-    You can optionally filter by state and/or group name.
+    You can optionally filter by state, group name, and/or alert name.
     
     Args:
         server_name: Name of the server to query. If empty, uses the first configured server.
         state: Optional filter by alert state. Can be 'firing', 'pending', or 'inactive'.
                Leave empty to get all alert rules regardless of state.
         group_name: Optional filter by alert rule group name. Leave empty to get all groups.
+        alert_name: Optional filter by alert name (not group name). Leave empty to get all alerts.
     
     Returns:
         str: JSON string with all alert rules including:
@@ -238,6 +239,22 @@ async def get_alerts(server_name: str = "", state: str = "", group_name: str = "
                 # Filter by group name if specified
                 if group_name:
                     groups = [g for g in groups if g.get("name") == group_name]
+                
+                # Filter by alert name if specified
+                if alert_name:
+                    filtered_groups = []
+                    for group in groups:
+                        filtered_rules = []
+                        for rule in group.get("rules", []):
+                            if rule.get("type") == "alerting" and rule.get("name") == alert_name:
+                                filtered_rules.append(rule)
+                        
+                        if filtered_rules:
+                            filtered_group = group.copy()
+                            filtered_group["rules"] = filtered_rules
+                            filtered_groups.append(filtered_group)
+                    
+                    groups = filtered_groups
                 
                 # Filter by state if specified
                 if state:
@@ -288,7 +305,8 @@ async def get_alerts(server_name: str = "", state: str = "", group_name: str = "
                     "server_description": server["description"],
                     "filter": {
                         "state": state if state else "all",
-                        "group_name": group_name if group_name else "all"
+                        "group_name": group_name if group_name else "all",
+                        "alert_name": alert_name if alert_name else "all"
                     },
                     "summary": {
                         "total_alert_rules": total_rules,
