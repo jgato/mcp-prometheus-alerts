@@ -186,7 +186,7 @@ async def check_prometheus_connection(server_name: str = "") -> str:
 
 
 @mcp.tool()
-async def get_alerts(server_name: str = "", state: str = "", group_name: str = "", alert_name: str = "") -> str:
+async def get_alerts(server_name: str = "", state: str = "", group_name: str = "", alert_name: str = "", extended_metadata: bool = False) -> str:
     """
     Get all alert rules and alerts from Prometheus.
     
@@ -199,13 +199,15 @@ async def get_alerts(server_name: str = "", state: str = "", group_name: str = "
                Leave empty to get all alert rules regardless of state.
         group_name: Optional filter by alert rule group name. Leave empty to get all groups.
         alert_name: Optional filter by alert name (not group name). Leave empty to get all alerts.
+        extended_metadata: If True, returns full alert metadata. If False (default), returns only 
+                          name, state, severity (from labels), and annotations for each alert.
     
     Returns:
-        str: JSON string with all alert rules including:
-             - Summary statistics (total rules, counts by state)
-             - Alert rule groups with complete definitions
-             - Rule queries, labels, annotations
-             - Current state and active alerts for each rule
+        str: JSON string with alert rules. When extended_metadata is False (default):
+             - Returns only: name, state, severity (from labels), annotations for each alert
+             When extended_metadata is True:
+             - Returns complete metadata including queries, evaluation times, health status, all labels, etc.
+             Both modes include summary statistics and group information.
     """
     server = get_server(server_name if server_name else None)
     if not server:
@@ -299,6 +301,31 @@ async def get_alerts(server_name: str = "", state: str = "", group_name: str = "
                             alerts = rule.get("alerts", [])
                             total_alerts += len(alerts)
                 
+                # Strip down to minimal metadata if extended_metadata is False
+                if not extended_metadata:
+                    simplified_groups = []
+                    for group in groups:
+                        simplified_rules = []
+                        for rule in group.get("rules", []):
+                            if rule.get("type") == "alerting":
+                                labels = rule.get("labels", {})
+                                simplified_rule = {
+                                    "name": rule.get("name"),
+                                    "state": rule.get("state"),
+                                    "severity": labels.get("severity", "none"),
+                                    "annotations": rule.get("annotations", {})
+                                }
+                                simplified_rules.append(simplified_rule)
+                        
+                        if simplified_rules:
+                            simplified_group = {
+                                "name": group.get("name"),
+                                "rules": simplified_rules
+                            }
+                            simplified_groups.append(simplified_group)
+                    
+                    groups = simplified_groups
+                
                 result = {
                     "status": "success",
                     "server": server["name"],
@@ -306,7 +333,8 @@ async def get_alerts(server_name: str = "", state: str = "", group_name: str = "
                     "filter": {
                         "state": state if state else "all",
                         "group_name": group_name if group_name else "all",
-                        "alert_name": alert_name if alert_name else "all"
+                        "alert_name": alert_name if alert_name else "all",
+                        "extended_metadata": extended_metadata
                     },
                     "summary": {
                         "total_alert_rules": total_rules,
