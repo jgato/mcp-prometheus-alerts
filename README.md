@@ -8,7 +8,7 @@ A Model Context Protocol (MCP) server for interacting with Prometheus monitoring
 ## Features
 
 - Check Prometheus server connection
-- Query alerts and metrics from Prometheus
+- Query alerts from Prometheus
 - Bearer token authentication support
 
 ## Installation
@@ -23,7 +23,7 @@ pip install -r requirements.txt
 3. Configure your Prometheus connection:
 
 ```bash
-cp .env.example .env
+touch .env
 # Edit .env with your Prometheus URL and token
 ```
 
@@ -148,15 +148,6 @@ Check the connection to a Prometheus server and retrieve build information.
 
 **Returns:** JSON string with connection status and server information.
 
-**Example usage:**
-```python
-# Check default/first server
-check_prometheus_connection()
-
-# Check specific server
-check_prometheus_connection(server_name="production")
-```
-
 ### get_alerts
 
 Get alert rules from Prometheus with optional filtering by state, group, and alert name.
@@ -176,26 +167,6 @@ This function returns all alert rules defined in the system. You can filter by s
 - Applied filters
 - Alert rule groups with definitions (full or simplified based on `extended_metadata`)
 
-**Example usage:**
-```python
-# Get all alerts from default server (simplified)
-get_alerts()
-
-# Get all alerts from specific server with full metadata
-get_alerts(server_name="production", extended_metadata=True)
-
-# Get only firing alerts from specific server
-get_alerts(server_name="production", state="firing")
-
-# Get alerts from a specific group
-get_alerts(group_name="kubernetes-storage")
-
-# Get a specific alert with full details
-get_alerts(alert_name="KubePersistentVolumeFillingUp", extended_metadata=True)
-
-# Combine filters
-get_alerts(server_name="production", group_name="etcd", state="firing")
-```
 
 ### Example: Comparing Alerts Across Multiple Servers
 
