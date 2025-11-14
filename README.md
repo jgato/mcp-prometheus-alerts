@@ -29,54 +29,66 @@ touch .env
 
 ## Configuration
 
-The server supports two configuration modes:
+The server uses indexed environment variables to configure Prometheus servers. Each server is configured using a separate environment variable with a zero-based index (0-9), allowing up to 10 servers.
 
-### Single Prometheus Server Configuration (Backward Compatible)
+### Environment Variable Format
 
-For a single Prometheus server, use these environment variables:
-
-- `PROMETHEUS_URL`: The base URL of your Prometheus server (e.g., `https://prometheus.example.com`)
-- `PROMETHEUS_TOKEN`: Bearer token for authentication (optional, if your Prometheus requires auth)
-- `PROMETHEUS_VERIFY_SSL`: Set to `false` to disable SSL certificate verification for self-signed certificates (default: `true`)
-
-### Multiple Prometheus Server Configuration
-
-For multiple Prometheus servers, use the `PROMETHEUS_SERVERS` environment variable with a JSON array:
+Configure each Prometheus server using `PROMETHEUS_SERVER_N` where N is an index from 0 to 9:
 
 ```bash
-export PROMETHEUS_SERVERS='[
-  {
-    "name": "production",
-    "description": "Production Prometheus Server",
-    "url": "https://prometheus-prod.example.com",
-    "token": "prod-bearer-token",
-    "verify_ssl": true
-  },
-  {
-    "name": "staging",
-    "description": "Staging Prometheus Server",
-    "url": "https://prometheus-staging.example.com",
-    "token": "staging-bearer-token",
-    "verify_ssl": false
-  },
-  {
-    "name": "development",
-    "description": "Development Prometheus Server",
-    "url": "https://prometheus-dev.example.com",
-    "token": "",
-    "verify_ssl": true
-  }
-]'
+# Configure first server (index 0)
+export PROMETHEUS_SERVER_0='{"name":"production","url":"https://prometheus-prod.example.com","description":"Production Server","token":"prod-bearer-token","verify_ssl":true}'
+
+# Configure second server (index 1)
+export PROMETHEUS_SERVER_1='{"name":"staging","url":"https://prometheus-staging.example.com","description":"Staging Server","token":"staging-bearer-token","verify_ssl":false}'
+
+# Configure third server (index 2)
+export PROMETHEUS_SERVER_2='{"name":"development","url":"http://localhost:9090","description":"Development Server"}'
 ```
 
-Each server configuration includes:
-- `name` (required): Unique identifier for the server
-- `description` (optional): Human-readable description
-- `url` (required): Base URL of the Prometheus server
-- `token` (optional): Bearer token for authentication
-- `verify_ssl` (optional): Whether to verify SSL certificates (default: `true`)
+### Configuration Fields
 
-**Note:** See `servers-config-example.json` for a formatted example of the JSON configuration.
+Each server configuration JSON must include:
+
+| Field | Required | Type | Default | Description |
+|-------|----------|------|---------|-------------|
+| `name` | ✅ Yes | string | - | Unique identifier for the server |
+| `url` | ✅ Yes | string | - | Base URL of the Prometheus server |
+| `description` | ❌ No | string | `""` | Human-readable description |
+| `token` | ❌ No | string | `""` | Bearer token for authentication |
+| `verify_ssl` | ❌ No | boolean/string | `true` | Whether to verify SSL certificates |
+
+### Single Server Configuration
+
+Even for a single server, use the indexed format starting at index 0:
+
+```bash
+export PROMETHEUS_SERVER_0='{"name":"default","url":"https://prometheus.example.com","token":"my-token"}'
+```
+
+### Important Notes
+
+#### Zero-Based Indexing
+Server indices start at **0** and end at **9** (maximum 10 servers). This follows standard programming conventions:
+- First server: `PROMETHEUS_SERVER_0`
+- Second server: `PROMETHEUS_SERVER_1`
+- ...
+- Tenth server: `PROMETHEUS_SERVER_9`
+
+#### Gaps in Numbering
+You can skip indices if needed. For example, you can configure only servers 0, 3, and 7:
+
+```bash
+export PROMETHEUS_SERVER_0='{"name":"prod","url":"https://prod.example.com"}'
+export PROMETHEUS_SERVER_3='{"name":"staging","url":"https://staging.example.com"}'
+export PROMETHEUS_SERVER_7='{"name":"dev","url":"http://localhost:9090"}'
+```
+
+#### Verify SSL Options
+The `verify_ssl` field accepts multiple formats:
+- Boolean: `true` or `false`
+- String: `"true"`, `"false"`, `"yes"`, `"1"`
+- If invalid or missing, defaults to `true`
 
 ## Usage
 
@@ -88,9 +100,9 @@ python prometheus_mcp.py
 
 ### Using with MCP Client
 
-#### Single Server Configuration
-
 Add to your MCP client configuration (e.g., `~/.cursor/mcp.json`):
+
+#### Single Server Example
 
 ```json
 {
@@ -99,18 +111,14 @@ Add to your MCP client configuration (e.g., `~/.cursor/mcp.json`):
       "command": "python",
       "args": ["/path/to/prometheus-alerts-mcp/prometheus_mcp.py"],
       "env": {
-        "PROMETHEUS_URL": "https://your-prometheus-server.com",
-        "PROMETHEUS_TOKEN": "your-bearer-token",
-        "PROMETHEUS_VERIFY_SSL": "false"
+        "PROMETHEUS_SERVER_0": "{\"name\":\"production\",\"url\":\"https://prometheus.example.com\",\"token\":\"your-bearer-token\",\"verify_ssl\":false}"
       }
     }
   }
 }
 ```
 
-#### Multiple Server Configuration
-
-For multiple servers, use the `PROMETHEUS_SERVERS` environment variable:
+#### Multiple Servers Example
 
 ```json
 {
@@ -119,7 +127,9 @@ For multiple servers, use the `PROMETHEUS_SERVERS` environment variable:
       "command": "python",
       "args": ["/path/to/prometheus-alerts-mcp/prometheus_mcp.py"],
       "env": {
-        "PROMETHEUS_SERVERS": "[{\"name\":\"production\",\"description\":\"Production Server\",\"url\":\"https://prometheus-prod.example.com\",\"token\":\"prod-token\",\"verify_ssl\":true},{\"name\":\"staging\",\"description\":\"Staging Server\",\"url\":\"https://prometheus-staging.example.com\",\"token\":\"staging-token\",\"verify_ssl\":false}]"
+        "PROMETHEUS_SERVER_0": "{\"name\":\"production\",\"url\":\"https://prometheus-prod.example.com\",\"token\":\"prod-token\"}",
+        "PROMETHEUS_SERVER_1": "{\"name\":\"staging\",\"url\":\"https://prometheus-staging.example.com\",\"token\":\"staging-token\",\"verify_ssl\":false}",
+        "PROMETHEUS_SERVER_2": "{\"name\":\"development\",\"url\":\"http://localhost:9090\"}"
       }
     }
   }

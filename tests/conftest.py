@@ -67,3 +67,23 @@ def minimal_server_config():
         "url": "http://localhost:9090"
     }
 
+
+@pytest.fixture
+def capture_warnings(capfd):
+    """
+    Fixture to capture warning messages printed to stdout.
+    
+    Usage:
+        def test_warning(mock_env, capture_warnings):
+            # ... code that prints warnings ...
+            warnings = capture_warnings()
+            assert "Warning:" in warnings
+    
+    Returns:
+        function: A callable that returns captured stdout as a string.
+    """
+    def _capture():
+        captured = capfd.readouterr()
+        return captured.out
+    return _capture
+

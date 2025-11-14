@@ -55,19 +55,19 @@
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T007 [P] [US1] Write test_single_server_at_index_0 in tests/test_config_loading.py
-- [ ] T008 [P] [US1] Write test_multiple_servers_sequential in tests/test_config_loading.py  
-- [ ] T009 [P] [US1] Write test_three_servers_configured in tests/test_config_loading.py
-- [ ] T010 [P] [US1] Write test_servers_with_gaps in tests/test_config_loading.py (indices 1, 3)
-- [ ] T011 [P] [US1] Write test_all_10_servers_configured in tests/test_config_loading.py
-- [ ] T012 [P] [US1] Write test_only_index_9_configured in tests/test_config_loading.py
+- [x] T007 [P] [US1] Write test_single_server_at_index_0 in tests/test_config_loading.py
+- [x] T008 [P] [US1] Write test_multiple_servers_sequential in tests/test_config_loading.py  
+- [x] T009 [P] [US1] Write test_three_servers_configured in tests/test_config_loading.py
+- [x] T010 [P] [US1] Write test_servers_with_gaps in tests/test_config_loading.py (indices 1, 3)
+- [x] T011 [P] [US1] Write test_all_10_servers_configured in tests/test_config_loading.py
+- [x] T012 [P] [US1] Write test_only_index_9_configured in tests/test_config_loading.py
 
 ### Implementation for User Story 1
 
-- [ ] T013 [US1] Implement environment variable scanning loop (range 0-9) in load_servers() function in prometheus_mcp.py
-- [ ] T014 [US1] Implement gap handling logic (continue on missing indices) in load_servers() function in prometheus_mcp.py
-- [ ] T015 [US1] Implement basic JSON parsing with try/except for each variable in load_servers() function in prometheus_mcp.py
-- [ ] T016 [US1] Build SERVERS dictionary from successfully parsed configs in load_servers() function in prometheus_mcp.py
+- [x] T013 [US1] Implement environment variable scanning loop (range 0-9) in load_servers() function in prometheus_mcp.py
+- [x] T014 [US1] Implement gap handling logic (continue on missing indices) in load_servers() function in prometheus_mcp.py
+- [x] T015 [US1] Implement basic JSON parsing with try/except for each variable in load_servers() function in prometheus_mcp.py
+- [x] T016 [US1] Build SERVERS dictionary from successfully parsed configs in load_servers() function in prometheus_mcp.py
 
 **Checkpoint**: Run test suite for US1 - all 6 tests should pass. Verify list_servers tool works with various configurations.
 
@@ -81,19 +81,19 @@
 
 ### Tests for User Story 2
 
-- [ ] T017 [P] [US2] Write test_all_fields_present in tests/test_config_loading.py
-- [ ] T018 [P] [US2] Write test_only_required_fields in tests/test_config_loading.py
-- [ ] T019 [P] [US2] Write test_verify_ssl_false in tests/test_config_loading.py
-- [ ] T020 [P] [US2] Write test_verify_ssl_string_formats in tests/test_config_loading.py (test "true", "false", "yes", "1")
-- [ ] T021 [P] [US2] Write test_missing_required_field_name in tests/test_config_loading.py
-- [ ] T022 [P] [US2] Write test_missing_required_field_url in tests/test_config_loading.py
+- [x] T017 [P] [US2] Write test_all_fields_present in tests/test_config_loading.py
+- [x] T018 [P] [US2] Write test_only_required_fields in tests/test_config_loading.py
+- [x] T019 [P] [US2] Write test_verify_ssl_false in tests/test_config_loading.py
+- [x] T020 [P] [US2] Write test_verify_ssl_string_formats in tests/test_config_loading.py (test "true", "false", "yes", "1")
+- [x] T021 [P] [US2] Write test_missing_required_field_name in tests/test_config_loading.py
+- [x] T022 [P] [US2] Write test_missing_required_field_url in tests/test_config_loading.py
 
 ### Implementation for User Story 2
 
-- [ ] T023 [US2] Implement required field validation (name, url) in load_servers() function in prometheus_mcp.py
-- [ ] T024 [US2] Implement optional field default application (description="", token="", verify_ssl=True) in load_servers() function in prometheus_mcp.py
-- [ ] T025 [US2] Integrate parse_verify_ssl() helper function for verify_ssl field parsing in load_servers() function in prometheus_mcp.py
-- [ ] T026 [US2] Add field type validation and coercion in load_servers() function in prometheus_mcp.py
+- [x] T023 [US2] Implement required field validation (name, url) in load_servers() function in prometheus_mcp.py
+- [x] T024 [US2] Implement optional field default application (description="", token="", verify_ssl=True) in load_servers() function in prometheus_mcp.py
+- [x] T025 [US2] Integrate parse_verify_ssl() helper function for verify_ssl field parsing in load_servers() function in prometheus_mcp.py
+- [x] T026 [US2] Add field type validation and coercion in load_servers() function in prometheus_mcp.py
 
 **Checkpoint**: Run test suite for US2 - all 6 tests should pass. Verify servers with various field combinations load correctly.
 
@@ -107,22 +107,22 @@
 
 ### Tests for User Story 3
 
-- [ ] T027 [P] [US3] Write test_missing_url_field_warning in tests/test_config_loading.py
-- [ ] T028 [P] [US3] Write test_invalid_json_warning in tests/test_config_loading.py
-- [ ] T029 [P] [US3] Write test_duplicate_server_names in tests/test_config_loading.py
-- [ ] T030 [P] [US3] Write test_invalid_verify_ssl_warning in tests/test_config_loading.py
-- [ ] T031 [P] [US3] Write test_out_of_range_index_10_warning in tests/test_config_loading.py
-- [ ] T032 [P] [US3] Write test_out_of_range_index_15_warning in tests/test_config_loading.py
-- [ ] T033 [P] [US3] Write test_multiple_invalid_servers_continue_loading in tests/test_config_loading.py
+- [x] T027 [P] [US3] Write test_missing_url_field_warning in tests/test_config_loading.py
+- [x] T028 [P] [US3] Write test_invalid_json_warning in tests/test_config_loading.py
+- [x] T029 [P] [US3] Write test_duplicate_server_names in tests/test_config_loading.py
+- [x] T030 [P] [US3] Write test_invalid_verify_ssl_warning in tests/test_config_loading.py
+- [x] T031 [P] [US3] Write test_out_of_range_index_10_warning in tests/test_config_loading.py
+- [x] T032 [P] [US3] Write test_out_of_range_index_15_warning in tests/test_config_loading.py
+- [x] T033 [P] [US3] Write test_multiple_invalid_servers_continue_loading in tests/test_config_loading.py
 
 ### Implementation for User Story 3
 
-- [ ] T034 [US3] Add JSON parse error handling with descriptive warnings in load_servers() function in prometheus_mcp.py
-- [ ] T035 [US3] Add missing required field warnings with field name in load_servers() function in prometheus_mcp.py
-- [ ] T036 [US3] Implement duplicate name detection and warning in load_servers() function in prometheus_mcp.py
-- [ ] T037 [US3] Add invalid verify_ssl value warning and default to True in parse_verify_ssl() function in prometheus_mcp.py
-- [ ] T038 [US3] Implement out-of-range index detection (check indices 10-99) and warnings in load_servers() function in prometheus_mcp.py
-- [ ] T039 [US3] Ensure graceful continuation after errors (skip invalid, load others) in load_servers() function in prometheus_mcp.py
+- [x] T034 [US3] Add JSON parse error handling with descriptive warnings in load_servers() function in prometheus_mcp.py
+- [x] T035 [US3] Add missing required field warnings with field name in load_servers() function in prometheus_mcp.py
+- [x] T036 [US3] Implement duplicate name detection and warning in load_servers() function in prometheus_mcp.py
+- [x] T037 [US3] Add invalid verify_ssl value warning and default to True in parse_verify_ssl() function in prometheus_mcp.py
+- [x] T038 [US3] Implement out-of-range index detection (check indices 10-99) and warnings in load_servers() function in prometheus_mcp.py
+- [x] T039 [US3] Ensure graceful continuation after errors (skip invalid, load others) in load_servers() function in prometheus_mcp.py
 
 **Checkpoint**: Run test suite for US3 - all 7 tests should pass. Verify clear warnings for each error type and valid servers still load.
 
@@ -132,15 +132,15 @@
 
 **Purpose**: Documentation, cleanup, and final validation
 
-- [ ] T040 [P] Update README.md with indexed configuration examples (remove old PROMETHEUS_URL and PROMETHEUS_SERVERS sections)
-- [ ] T041 [P] Add configuration troubleshooting section to README.md
-- [ ] T042 [P] Add zero-based indexing explanation to README.md
-- [ ] T043 [P] Remove servers-config-example.json file (no longer needed)
-- [ ] T044 Run full test suite (all 19 tests) and verify 100% pass
-- [ ] T045 Test with real Prometheus server using list_servers tool
-- [ ] T046 [P] Add code comments explaining indexed scanning logic in prometheus_mcp.py
-- [ ] T047 Validate quickstart.md examples work correctly
-- [ ] T048 Update constitution.md if multi-server architecture description needs adjustment
+- [x] T040 [P] Update README.md with indexed configuration examples (remove old PROMETHEUS_URL and PROMETHEUS_SERVERS sections)
+- [x] T041 [P] Add configuration troubleshooting section to README.md
+- [x] T042 [P] Add zero-based indexing explanation to README.md
+- [x] T043 [P] Remove servers-config-example.json file (no longer needed)
+- [x] T044 Run full test suite (all 19 tests) and verify 100% pass
+- [ ] T045 Test with real Prometheus server using list_servers tool (requires external setup - deferred)
+- [x] T046 [P] Add code comments explaining indexed scanning logic in prometheus_mcp.py
+- [ ] T047 Validate quickstart.md examples work correctly (quickstart.md is in specs folder, not for end users)
+- [ ] T048 Update constitution.md if multi-server architecture description needs adjustment (no changes needed)
 
 ---
 

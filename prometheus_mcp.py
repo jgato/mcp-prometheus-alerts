@@ -27,7 +27,9 @@ from typing import Dict, Optional
 # Initialize FastMCP server
 mcp = FastMCP("Prometheus MCP Server")
 
-# Load server configurations
+# Global dictionary to store server configurations
+# Key: server name (string), Value: server config dict
+# This dictionary is populated by load_servers() during module initialization
 SERVERS: Dict[str, dict] = {}
 
 
@@ -70,15 +72,90 @@ def load_servers():
     """
     Load Prometheus server configurations from indexed environment variables.
     
-    Scans PROMETHEUS_SERVER_0 through PROMETHEUS_SERVER_9 for server configurations.
-    Each variable should contain a JSON object with server configuration.
+    This function implements a zero-based indexed configuration system that allows
+    up to 10 Prometheus servers to be configured via separate environment variables.
+    
+    Indexing Strategy:
+    - Uses zero-based indexing (0-9) following programming conventions
+    - Scans PROMETHEUS_SERVER_0 through PROMETHEUS_SERVER_9
+    - Gaps in numbering are allowed (e.g., 0, 3, 7 configured, 1-2, 4-6, 8-9 empty)
+    - Out-of-range indices (10+) are detected and warned about
+    
+    Environment variable format:
+        PROMETHEUS_SERVER_N='{"name":"server","url":"https://...","description":"...","token":"...","verify_ssl":true}'
+    
+    Where N is an integer from 0 to 9 (maximum 10 servers).
+    
+    Error Handling:
+    - Invalid JSON: Warning logged, server skipped, other servers continue loading
+    - Missing required fields (name/url): Warning logged, server skipped
+    - Duplicate server names: Warning logged, last definition wins
+    - Invalid verify_ssl: Warning logged, defaults to True
+    
+    The function populates the global SERVERS dictionary with successfully parsed
+    configurations. Servers are keyed by their 'name' field.
     """
     global SERVERS
     SERVERS = {}
     
-    # Implementation will be added in Phase 3 (User Story 1)
-    # This function will scan PROMETHEUS_SERVER_0 through PROMETHEUS_SERVER_9
-    pass
+    # First pass: Check for out-of-range indices (10-99) to help users identify misconfigurations
+    # This proactive check prevents silent failures when users accidentally use 1-based indexing
+    for i in range(10, 100):
+        var_name = f"PROMETHEUS_SERVER_{i}"
+        if os.getenv(var_name):
+            print(f"Warning: {var_name} is out of range (valid indices: 0-9). This server will be ignored.")
+    
+    # Main scanning loop: Iterate through valid indices 0-9
+    # Using range(10) provides exactly indices 0, 1, 2, ..., 9
+    for i in range(10):
+        var_name = f"PROMETHEUS_SERVER_{i}"
+        config_json = os.getenv(var_name)
+        
+        # Skip empty slots - this allows gaps in server numbering
+        # Example: User can configure servers 0, 3, 7 and skip 1, 2, 4, 5, 6, 8, 9
+        if not config_json:
+            continue
+        
+        # T034: Parse JSON with descriptive error handling
+        try:
+            config = json.loads(config_json)
+        except json.JSONDecodeError as e:
+            print(f"Warning: Failed to parse {var_name}: {e}")
+            continue
+        
+        # T035: Validate required fields with specific warnings
+        name = config.get('name')
+        url = config.get('url')
+        
+        missing_fields = []
+        if not name:
+            missing_fields.append('name')
+        if not url:
+            missing_fields.append('url')
+        
+        if missing_fields:
+            if len(missing_fields) == 1:
+                print(f"Warning: {var_name} missing required field '{missing_fields[0]}'. Skipping this server.")
+            else:
+                print(f"Warning: {var_name} missing required fields {missing_fields}. Skipping this server.")
+            continue
+        
+        # T036: Check for duplicate server names
+        if name in SERVERS:
+            print(f"Warning: Duplicate server name '{name}' found in {var_name}. "
+                  f"Previous definition will be overwritten.")
+        
+        # T016: Build server configuration with defaults
+        server_config = {
+            "name": name,
+            "url": url,
+            "description": config.get('description', ''),
+            "token": config.get('token', ''),
+            "verify_ssl": parse_verify_ssl(config.get('verify_ssl', True))
+        }
+        
+        # T039: Add to SERVERS dict (graceful continuation - errors don't stop loading)
+        SERVERS[name] = server_config
 
 # Load servers on startup
 load_servers()
