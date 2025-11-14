@@ -38,8 +38,8 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T005 Remove old configuration loading code from prometheus_mcp.py (lines ~38-66: PROMETHEUS_SERVERS and PROMETHEUS_URL/TOKEN logic)
-- [ ] T006 Create helper function parse_verify_ssl() in prometheus_mcp.py for boolean/string parsing
+- [x] T005 Remove old configuration loading code from prometheus_mcp.py (lines ~38-66: PROMETHEUS_SERVERS and PROMETHEUS_URL/TOKEN logic)
+- [x] T006 Create helper function parse_verify_ssl() in prometheus_mcp.py for boolean/string parsing
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 

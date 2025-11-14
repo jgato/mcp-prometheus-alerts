@@ -30,39 +30,55 @@ mcp = FastMCP("Prometheus MCP Server")
 # Load server configurations
 SERVERS: Dict[str, dict] = {}
 
+
+def parse_verify_ssl(value):
+    """
+    Parse verify_ssl field from various formats to boolean.
+    
+    Args:
+        value: Boolean, string ("true"/"false"/"yes"/"1"/etc), or other type
+        
+    Returns:
+        bool: True or False
+        
+    Examples:
+        parse_verify_ssl(True) -> True
+        parse_verify_ssl("true") -> True
+        parse_verify_ssl("false") -> False
+        parse_verify_ssl("yes") -> True
+        parse_verify_ssl("1") -> True
+        parse_verify_ssl(123) -> True (with warning)
+    """
+    # Handle None - default to True
+    if value is None:
+        return True
+    
+    # Handle boolean directly
+    if isinstance(value, bool):
+        return value
+    
+    # Handle string values
+    if isinstance(value, str):
+        return value.lower() in ("true", "1", "yes")
+    
+    # Invalid type - default to True with warning
+    print(f"Warning: Invalid verify_ssl value type {type(value).__name__}, defaulting to True")
+    return True
+
+
 def load_servers():
-    """Load Prometheus server configurations from environment variables"""
+    """
+    Load Prometheus server configurations from indexed environment variables.
+    
+    Scans PROMETHEUS_SERVER_0 through PROMETHEUS_SERVER_9 for server configurations.
+    Each variable should contain a JSON object with server configuration.
+    """
     global SERVERS
+    SERVERS = {}
     
-    # Try to load multiple servers from JSON configuration
-    servers_json = os.getenv("PROMETHEUS_SERVERS", "")
-    if servers_json:
-        try:
-            servers_list = json.loads(servers_json)
-            for server in servers_list:
-                name = server.get("name")
-                if name:
-                    SERVERS[name] = {
-                        "name": name,
-                        "description": server.get("description", ""),
-                        "url": server.get("url", ""),
-                        "token": server.get("token", ""),
-                        "verify_ssl": server.get("verify_ssl", True)
-                    }
-        except json.JSONDecodeError as e:
-            print(f"Warning: Failed to parse PROMETHEUS_SERVERS JSON: {e}")
-    
-    # Backward compatibility: Load single server configuration if PROMETHEUS_SERVERS not set
-    if not SERVERS:
-        prometheus_url = os.getenv("PROMETHEUS_URL", "")
-        if prometheus_url:
-            SERVERS["default"] = {
-                "name": "default",
-                "description": "Default Prometheus server",
-                "url": prometheus_url,
-                "token": os.getenv("PROMETHEUS_TOKEN", ""),
-                "verify_ssl": os.getenv("PROMETHEUS_VERIFY_SSL", "true").lower() in ("true", "1", "yes")
-            }
+    # Implementation will be added in Phase 3 (User Story 1)
+    # This function will scan PROMETHEUS_SERVER_0 through PROMETHEUS_SERVER_9
+    pass
 
 # Load servers on startup
 load_servers()
