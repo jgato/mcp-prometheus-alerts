@@ -25,10 +25,10 @@
 
 **Purpose**: Project initialization and testing infrastructure
 
-- [ ] T001 Add pytest dependency to requirements.txt
-- [ ] T002 Create tests/ directory structure with __init__.py
-- [ ] T003 [P] Create tests/conftest.py with shared fixtures (mock_env, reset_servers, sample_server_config)
-- [ ] T004 [P] Create tests/test_config_loading.py test file skeleton with test classes
+- [x] T001 Add pytest dependency to requirements.txt
+- [x] T002 Create tests/ directory structure with __init__.py
+- [x] T003 [P] Create tests/conftest.py with shared fixtures (mock_env, reset_servers, sample_server_config)
+- [x] T004 [P] Create tests/test_config_loading.py test file skeleton with test classes
 
 ---
 
