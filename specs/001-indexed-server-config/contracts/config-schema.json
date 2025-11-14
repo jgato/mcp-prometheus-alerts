@@ -1,0 +1,81 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Prometheus Server Configuration",
+  "description": "JSON schema for PROMETHEUS_SERVER_N environment variable configuration",
+  "type": "object",
+  "required": ["name", "url"],
+  "properties": {
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Unique identifier for the server. Used as the key in SERVERS dictionary.",
+      "examples": ["production", "staging", "dev", "prod-us-east-1"]
+    },
+    "url": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^https?://",
+      "description": "Base URL of the Prometheus server including protocol (http:// or https://)",
+      "examples": [
+        "https://prometheus.example.com",
+        "http://localhost:9090",
+        "https://prometheus-prod.internal:9090"
+      ]
+    },
+    "description": {
+      "type": "string",
+      "default": "",
+      "description": "Human-readable description of the server. Optional.",
+      "examples": [
+        "Production Prometheus Server",
+        "Staging environment metrics",
+        ""
+      ]
+    },
+    "token": {
+      "type": "string",
+      "default": "",
+      "description": "Bearer token for Prometheus authentication. Optional. Keep confidential.",
+      "examples": [
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+        ""
+      ]
+    },
+    "verify_ssl": {
+      "oneOf": [
+        {
+          "type": "boolean",
+          "description": "Boolean true or false"
+        },
+        {
+          "type": "string",
+          "enum": ["true", "false", "yes", "no", "1", "0"],
+          "description": "String representation of boolean"
+        }
+      ],
+      "default": true,
+      "description": "Whether to verify SSL certificates. Accepts boolean or string. Defaults to true.",
+      "examples": [true, false, "true", "false"]
+    }
+  },
+  "additionalProperties": false,
+  "examples": [
+    {
+      "name": "production",
+      "url": "https://prometheus-prod.example.com",
+      "description": "Production Prometheus Server",
+      "token": "my-bearer-token-123",
+      "verify_ssl": true
+    },
+    {
+      "name": "staging",
+      "url": "https://prometheus-staging.local",
+      "verify_ssl": false
+    },
+    {
+      "name": "localhost",
+      "url": "http://localhost:9090"
+    }
+  ]
+}
+
